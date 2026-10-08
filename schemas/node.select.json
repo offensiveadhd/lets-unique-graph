@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.node.select (event)",
+  "type": "object",
+  "required": ["ids", "labels"],
+  "properties": {
+    "ids": { "type": "array", "items": { "type": "string" } },
+    "labels": { "type": "array", "items": { "type": "string" }, "description": "Same order as ids." }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.edge.add (command)",
+  "type": "object",
+  "required": ["from", "to"],
+  "properties": {
+    "from": { "$ref": "graph.schema.json#/$defs/id" },
+    "to": { "$ref": "graph.schema.json#/$defs/id" },
+    "label": { "type": "string", "maxLength": 160 },
+    "id": { "$ref": "graph.schema.json#/$defs/id", "description": "Optional. Without it, an existing from-to edge is updated rather than duplicated." },
+    "kind": { "type": "string", "enum": ["solid", "dashed", "dotted", "bold", "muted"] }
+  }
+}

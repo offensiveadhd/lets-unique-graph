@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Graph — lets</title>
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/sdk/lets-shell.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body data-unique="graph">
+<main id="app">
+  <div id="board" class="board">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg" tabindex="0" role="application"
+         aria-roledescription="graph board"
+         aria-label="Graph board. Tab moves between nodes, Enter edits, arrows nudge, Delete removes, question mark lists shortcuts.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="10" markerHeight="10"
+                markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="arrowhead" d="M0,1 L10,5 L0,9 L2.5,5 z"/>
+        </marker>
+        <marker id="arrow-sel" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="11" markerHeight="11"
+                markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="arrowhead sel" d="M0,1 L10,5 L0,9 L2.5,5 z"/>
+        </marker>
+        <marker id="arrow-hl" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="11" markerHeight="11"
+                markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="arrowhead hl" d="M0,1 L10,5 L0,9 L2.5,5 z"/>
+        </marker>
+      </defs>
+      <g id="world">
+        <g id="layer-groups"></g>
+        <g id="layer-edges"></g>
+        <g id="layer-nodes"></g>
+        <g id="layer-inline"></g>
+        <g id="layer-temp"><path id="temp-edge" class="temp-edge" d=""/></g>
+      </g>
+      <rect id="marquee" class="marquee" x="0" y="0" width="0" height="0" visibility="hidden"/>
+    </svg>
+  </div>
+
+  <nav id="toolbar" class="toolbar glass" role="toolbar" aria-label="Graph tools">
+    <div class="tb-brand" title="graph · lets">
+      <span id="status-dot" class="tb-dot" data-status="connecting" role="img" aria-label="Connecting to Claude"></span>
+      <span class="tb-name">graph</span>
+    </div>
+
+    <div class="tb-group" role="group" aria-label="Add node">
+      <button type="button" class="tb-btn k-idea" data-act="add" data-kind="idea" title="Add idea (N)" aria-label="Add idea">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="11" rx="4"/><path d="M12 9.5v5M9.5 12h5"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-step" data-act="add" data-kind="step" title="Add step" aria-label="Add step">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="11" rx="2.2"/><path d="M9 12h6m-2-2 2 2-2 2"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-decision" data-act="add" data-kind="decision" title="Add decision" aria-label="Add decision">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 6.5h9l4 5.5-4 5.5h-9L3.5 12z"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-data" data-act="add" data-kind="data" title="Add data" aria-label="Add data">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="7" rx="7.5" ry="2.5"/><path d="M4.5 7v10c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5V7"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-note" data-act="add" data-kind="note" title="Add note" aria-label="Add note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h10l4 4v11H5z"/><path d="M15 4.5v4h4M8 12.5h8M8 16h5"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-group" data-act="add" data-kind="group" title="Add group (wraps the selection)" aria-label="Add group">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" stroke-dasharray="3 2.6"/></svg>
+      </button>
+      <button type="button" class="tb-btn k-image" data-act="add-image" title="Add image…" aria-label="Add image">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"/></svg>
+      </button>
+    </div>
+
+    <div class="tb-group" role="group" aria-label="Arrange">
+      <button type="button" class="tb-btn" id="btn-connect" data-act="connect" aria-pressed="false" title="Connect mode (C) — click a source, then a target" aria-label="Connect mode">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="7" r="2.5"/><path d="M8.3 15.5C11 12.5 12.5 9.6 15.7 8.4"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="layout" data-mode="tree" title="Auto-layout: tree (selection, or everything)" aria-label="Tree layout">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="9.5" width="5" height="5" rx="1.2"/><rect x="16.5" y="3.5" width="5" height="5" rx="1.2"/><rect x="16.5" y="15.5" width="5" height="5" rx="1.2"/><path d="M7.5 12h4m0-6v12m0-12h5m-5 12h5"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="layout" data-mode="grid" title="Auto-layout: grid" aria-label="Grid layout">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="layout" data-mode="radial" title="Auto-layout: radial" aria-label="Radial layout">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12.5" r="2.6"/><circle cx="12" cy="4" r="1.7"/><circle cx="19.6" cy="16.5" r="1.7"/><circle cx="4.4" cy="16.5" r="1.7"/><path d="M12 9.9V5.7m2.3 7.9 3.8 2m-8.4-2-3.8 2"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="fit" title="Fit to screen (F)" aria-label="Fit to screen">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9m6 0h3.5A1.5 1.5 0 0 1 20 5.5V9m0 6v3.5a1.5 1.5 0 0 1-1.5 1.5H15m-6 0H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg>
+      </button>
+      <button type="button" class="tb-btn tb-zoom" id="zoom-label" data-act="zoom-reset" title="Reset zoom to 100% (0)" aria-label="Reset zoom">100%</button>
+    </div>
+
+    <div class="tb-group" role="group" aria-label="History">
+      <button type="button" class="tb-btn" id="btn-undo" data-act="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5 4.5 11 9 15.5"/><path d="M5 11h9.5a5 5 0 0 1 0 10H12"/></svg>
+      </button>
+      <button type="button" class="tb-btn" id="btn-redo" data-act="redo" title="Redo (Ctrl+Y)" aria-label="Redo" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6.5 4.5 4.5-4.5 4.5"/><path d="M19 11H9.5a5 5 0 0 0 0 10H12"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="new" title="New board (clears it; Ctrl+Z restores)" aria-label="New board">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M12 10.5v6m-3-3h6"/></svg>
+      </button>
+    </div>
+
+    <div class="tb-group" role="group" aria-label="Claude">
+      <button type="button" class="tb-btn tb-primary" id="btn-send" data-act="send" title="Send the whole board to Claude" aria-label="Send to Claude">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 11.5 16-7-6.5 16-2.5-6.5z"/><path d="m11 14 9-9.5"/></svg>
+        <span>Send to Claude</span>
+      </button>
+      <button type="button" class="tb-btn tb-text" data-act="ask" title="Ask Claude about the selection (A)" aria-label="Ask Claude">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z"/><path d="M10 9.4a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.4M12 14.3v.1"/></svg>
+        <span>Ask</span>
+      </button>
+    </div>
+
+    <div class="tb-group" role="group" aria-label="Panels">
+      <button type="button" class="tb-btn" data-act="chat" title="Toggle chat (Ctrl+/)" aria-label="Toggle chat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h11a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 14.5H9l-3.5 3v-3H4A1.5 1.5 0 0 1 2.5 13V7A1.5 1.5 0 0 1 4 5.5z"/><path d="M16.5 9H20a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 20 18h-1v2.5L16 18h-4.5"/></svg>
+      </button>
+      <button type="button" class="tb-btn" data-act="entity" title="Show or hide your companion (Ctrl+Space)" aria-label="Toggle companion">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12.5" r="7"/><path d="M9.6 11.3v1.8M14.4 11.3v1.8"/><path d="M5 5.5a9.8 9.8 0 0 1 14 0" stroke-opacity=".5"/></svg>
+      </button>
+      <button type="button" class="tb-btn" id="btn-help" data-act="help" aria-expanded="false" aria-controls="help" title="Shortcuts (?)" aria-label="Keyboard shortcuts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.4v.5M12 16.6v.1"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <form id="ask" class="ask glass" hidden autocomplete="off">
+    <label for="ask-input" class="sr-only">Question for Claude</label>
+    <input id="ask-input" type="text" maxlength="500" placeholder="Ask Claude about this board…">
+    <button type="submit" class="tb-btn tb-primary"><span>Ask</span></button>
+  </form>
+
+  <div id="mode-hint" class="mode-hint glass" role="status" hidden></div>
+
+  <section id="help" class="help glass" hidden aria-label="Keyboard shortcuts">
+    <h2>Shortcuts</h2>
+    <dl>
+      <dt>Double-click</dt><dd>empty space: new idea · node or edge: edit label</dd>
+      <dt>Drag a node's dot</dt><dd>connect; release on empty space for a new linked node</dd>
+      <dt>Shift+click</dt><dd>with one node selected: connect to the clicked node</dd>
+      <dt>Ctrl+click</dt><dd>add to / remove from selection</dd>
+      <dt>Drag empty space</dt><dd>marquee select (Shift adds)</dd>
+      <dt>Space+drag · middle-drag</dt><dd>pan · wheel zooms · pinch on touch</dd>
+      <dt>Enter / F2</dt><dd>edit selected node</dd>
+      <dt>Arrows</dt><dd>nudge selection (Shift: ×10)</dd>
+      <dt>1 – 5</dt><dd>make selection idea · step · decision · data · note</dd>
+      <dt>N · C · F · A</dt><dd>new idea · connect mode · fit · ask</dd>
+      <dt>Ctrl+D · Ctrl+A</dt><dd>duplicate · select all</dd>
+      <dt>Ctrl+Z · Ctrl+Y</dt><dd>undo · redo</dd>
+      <dt>Ctrl+C · Ctrl+V</dt><dd>copy / paste nodes, paste text or screenshots</dd>
+      <dt>Delete</dt><dd>remove selection</dd>
+      <dt>Right-click · Ctrl+Space</dt><dd>call your companion</dd>
+      <dt>Esc</dt><dd>cancel the current mode</dd>
+    </dl>
+  </section>
+
+  <div id="minimap" class="minimap glass" hidden aria-hidden="true">
+    <svg id="mm-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+      <g id="mm-nodes"></g>
+      <rect id="mm-view" class="mm-view" x="0" y="0" width="0" height="0"/>
+    </svg>
+  </div>
+
+  <div id="empty" class="empty" hidden>
+    <div class="empty-orb" aria-hidden="true"></div>
+    <p><b>Double-click</b> anywhere to add an idea.</p>
+    <p>Drag from a node's glowing dot to connect · <b>right-click</b> to call your companion · paste a screenshot to pin it here.</p>
+  </div>
+
+  <textarea id="editor" class="editor" hidden spellcheck="false" rows="1" aria-label="Edit label"></textarea>
+  <input id="file-input" type="file" accept="image/*" multiple hidden>
+  <div id="g-toast" class="g-toast" role="status" aria-live="polite"></div>
+  <div id="sr-live" class="sr-only" aria-live="polite"></div>
+</main>
+<script type="module" src="./graph.js"></script>
+</body>
+</html>

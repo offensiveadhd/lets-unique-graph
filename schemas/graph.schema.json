@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "graph.schema.json",
+  "title": "lets graph",
+  "description": "The board graph JSON (UI-CONTRACT §3.2). Node x/y are the TOP-LEFT corner in graph units; screen = graph * viewport.zoom + (viewport.x, viewport.y).",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "properties": {
+    "rev": { "type": "integer", "minimum": 0, "description": "Increments on every committed change." },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "viewport": { "$ref": "#/$defs/viewport" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,64}$" },
+    "kind": { "type": "string", "enum": ["idea", "step", "decision", "data", "note", "image", "group"] },
+    "node": {
+      "type": "object",
+      "required": ["id", "label", "kind", "x", "y", "w", "h"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "maxLength": 300 },
+        "kind": { "$ref": "#/$defs/kind" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number", "minimum": 40, "maximum": 4000 },
+        "h": { "type": "number", "minimum": 32, "maximum": 4000 },
+        "color": { "type": "string", "description": "Any CSS colour; overrides the kind colour." },
+        "text": { "type": "string", "maxLength": 8000, "description": "Body text (notes) or a longer description (tooltip on other kinds)." },
+        "image": { "type": "string", "description": "Upload path (read it with your file tools) or a same-origin URL." },
+        "meta": {
+          "type": "object",
+          "description": "Free-form. Known keys: attachedTo (node an annotation belongs to), annotation, by, mime, w, h, src.",
+          "properties": {
+            "attachedTo": { "$ref": "#/$defs/id" },
+            "annotation": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "nodeInput": {
+      "description": "A node as Claude may send it: only id is required; missing fields take kind defaults and missing x/y are auto-placed.",
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "maxLength": 300 },
+        "kind": { "$ref": "#/$defs/kind" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" },
+        "color": { "type": "string" },
+        "text": { "type": "string" },
+        "image": { "type": "string" },
+        "meta": { "type": "object" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["id", "from", "to"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "maxLength": 160 },
+        "kind": { "type": "string", "description": "Styled kinds: dashed, dotted, bold, muted. Others are kept but drawn solid." }
+      }
+    },
+    "edgeInput": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "kind": { "type": "string" }
+      }
+    },
+    "viewport": {
+      "type": "object",
+      "required": ["x", "y", "zoom"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "zoom": { "type": "number", "minimum": 0.25, "maximum": 3 }
+      }
+    },
+    "ids": {
+      "oneOf": [
+        { "type": "array", "items": { "type": "string" } },
+        { "type": "string" }
+      ]
+    }
+  }
+}

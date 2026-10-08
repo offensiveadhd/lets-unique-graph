@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.layout (command)",
+  "type": "object",
+  "required": ["mode"],
+  "properties": {
+    "mode": { "type": "string", "enum": ["tree", "grid", "radial"] },
+    "root": { "$ref": "graph.schema.json#/$defs/id" },
+    "ids": { "type": "array", "items": { "type": "string" }, "description": "Lay out only these nodes (default: all). Groups re-wrap their members." }
+  }
+}

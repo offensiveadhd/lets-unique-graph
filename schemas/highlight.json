@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.highlight (command)",
+  "type": "object",
+  "required": ["ids"],
+  "properties": {
+    "ids": { "$ref": "graph.schema.json#/$defs/ids", "description": "Node and/or edge ids; empty clears every highlight." },
+    "color": { "type": "string", "description": "CSS colour; default magenta." },
+    "ttl": { "type": "integer", "minimum": 0, "default": 3000, "description": "Milliseconds; 0 keeps it until cleared." }
+  }
+}

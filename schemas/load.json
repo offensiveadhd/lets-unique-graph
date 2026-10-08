@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.load (command)",
+  "type": "object",
+  "required": ["graph"],
+  "properties": {
+    "graph": {
+      "type": "object",
+      "properties": {
+        "nodes": { "type": "array", "maxItems": 2000, "items": { "$ref": "graph.schema.json#/$defs/nodeInput" } },
+        "edges": { "type": "array", "maxItems": 5000, "items": { "$ref": "graph.schema.json#/$defs/edgeInput" } },
+        "viewport": { "$ref": "graph.schema.json#/$defs/viewport" }
+      }
+    },
+    "merge": { "type": "boolean", "default": false, "description": "true: upsert by id and keep everything else; false: replace the board." }
+  }
+}

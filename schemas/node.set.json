@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.node.set (command)",
+  "type": "object",
+  "required": ["id", "patch"],
+  "properties": {
+    "id": { "$ref": "graph.schema.json#/$defs/id" },
+    "patch": {
+      "type": "object",
+      "description": "Fields to change; null removes color / text / image / meta.",
+      "properties": {
+        "label": { "type": "string" },
+        "kind": { "$ref": "graph.schema.json#/$defs/kind" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" },
+        "color": { "type": ["string", "null"] },
+        "text": { "type": ["string", "null"] },
+        "image": { "type": ["string", "null"] },
+        "meta": { "type": ["object", "null"] }
+      }
+    }
+  }
+}

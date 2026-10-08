@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.changed (event)",
+  "type": "object",
+  "required": ["rev", "summary"],
+  "properties": {
+    "rev": { "type": "integer", "minimum": 0 },
+    "summary": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 0 },
+        "edges": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "description": "Node and edge ids touched since the previous graph.changed.",
+      "properties": {
+        "added": { "type": "array", "items": { "type": "string" } },
+        "removed": { "type": "array", "items": { "type": "string" } },
+        "updated": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

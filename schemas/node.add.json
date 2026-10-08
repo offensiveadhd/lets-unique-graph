@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graph.node.add (command)",
+  "type": "object",
+  "required": ["label"],
+  "properties": {
+    "id": { "$ref": "graph.schema.json#/$defs/id", "description": "Optional; generated (n_xxxxx) when omitted. An existing id is patched instead." },
+    "label": { "type": "string", "maxLength": 300 },
+    "kind": { "$ref": "graph.schema.json#/$defs/kind", "default": "idea" },
+    "x": { "type": "number", "description": "Top-left. Omit x/y to auto-place without overlap." },
+    "y": { "type": "number" },
+    "w": { "type": "number" },
+    "h": { "type": "number" },
+    "text": { "type": "string" },
+    "color": { "type": "string" },
+    "image": { "type": "string" },
+    "meta": { "type": "object" },
+    "near": { "$ref": "graph.schema.json#/$defs/id", "description": "Place next to this node (right, below, above, left: first free spot) and grow out of it." }
+  }
+}
