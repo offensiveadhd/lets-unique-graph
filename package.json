@@ -1,0 +1,10 @@
+{
+  "name": "lets-unique-graph",
+  "version": "0.2.0",
+  "description": "graph — the first lets unique: talk to Claude in diagrams.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": { "validate": "node scripts/validate.mjs" },
+  "repository": { "type": "git", "url": "https://github.com/TikoTikTok/lets-unique-graph.git" }
+}
