@@ -1582,14 +1582,18 @@ function sendToClaude() {
   void btnSend.getBoundingClientRect();
   btnSend.classList.add('sent');
   toast(G.nodes.size ? `Sent ${G.nodes.size} node${G.nodes.size === 1 ? '' : 's'} to Claude` : 'Sent an empty board to Claude', 'ok');
+  if (hasShell && shell.listening === false) toast('Pip is away — Claude reads this with your next message in Claude Code', 'info', 4500);
 }
 
-/** graph.ask with the selection and the full graph; mirrors the question in chat. */
-function emitAsk(question) {
+/** graph.ask with the selection (or explicit ids) and the full graph; mirrors the question in chat. */
+function emitAsk(question, ids = null) {
   changedSoon.flush();
-  lets.emitNow('graph.ask', { question, selection: [...sel], graph: exportGraph() });
-  try { shell.chat?.open?.(); shell.chat?.append?.('you', question); } catch { /* chat optional */ }
+  const selection = Array.isArray(ids) && ids.length ? ids.filter((id) => G.nodes.has(id)) : [...sel];
+  const labels = selection.map((id) => G.nodes.get(id)?.label).filter(Boolean);
+  lets.emitNow('graph.ask', { question, selection, labels, graph: exportGraph() });
+  try { shell.chat?.open?.(); shell.chat?.append?.('you', labels.length ? `${question}  ·  ${labels.join(', ')}` : question); } catch { /* chat optional */ }
   if (!hasShell) toast('Question sent to Claude', 'ok');
+  else if (shell.listening === false) toast('Pip is away — Claude reads this with your next message in Claude Code', 'info', 4500);
 }
 
 // ───────────────────────────── 10. incoming commands ─────────────────────────────
@@ -2081,21 +2085,72 @@ let suggestCtx = null;
  * carries `run(item, ctx)`, which the shell calls after emitting `entity.pick`.
  * @returns {{id:string, label:string, hint?:string, run:Function}[]}
  */
+/** The node ids a suggestion is about: the selection, else the node under the pointer when summoned. */
+function pipFocus() {
+  const ids = (suggestCtx?.selection || []).filter((id) => G.nodes.has(id));
+  if (ids.length) return ids;
+  const hov = suggestCtx?.hover;
+  return hov && G.nodes.has(hov) ? [hov] : [];
+}
+
+/**
+ * Pip's click menu. Everything here is about what the human is looking at:
+ * with a selection (or a hovered node) the questions target it; on empty
+ * space they target the whole board. Every "ask" item becomes a `graph.ask`
+ * event with the question, the ids and the labels, so Claude answers in chat
+ * and points with `graph.highlight`.
+ */
 function quickSuggestions(ctx) {
   suggestCtx = ctx && typeof ctx === 'object' ? ctx : entityContext();
-  const n = (suggestCtx.selection || []).length;
+  const focus = pipFocus();
+  const n = focus.length;
+  const names = focus.map((id) => G.nodes.get(id)?.label).filter(Boolean);
+  const what = n === 1 ? `“${(names[0] || 'this').slice(0, 24)}”` : n ? `these ${n}` : 'the board';
   const run = (item, c) => { if (c && typeof c === 'object') suggestCtx = c; runPick(item?.id); };
-  return [
-    { id: 'graph.add-here', label: 'Add a node here', hint: 'a new idea at this spot', run },
-    { id: 'graph.connect-selected', label: 'Connect selected', hint: n >= 2 ? `chain ${n} nodes in reading order` : 'select two or more first', run },
-    { id: 'graph.auto-layout', label: 'Auto-layout', hint: n >= 2 ? 'tidy the selection as a tree' : 'tidy the board as a tree', run },
-    { id: 'graph.explain-selection', label: 'Explain selection', hint: n ? `ask Claude about ${n} node${n === 1 ? '' : 's'}` : 'ask Claude about the board', run },
-    { id: 'graph.open-chat', label: 'Open chat', run },
-    { id: 'graph.paste-screenshot', label: 'Paste a screenshot', hint: 'drop or paste an image onto the board', run },
-  ];
+  const it = (id, label, hint) => ({ id, label, hint, run });
+  const items = [];
+  if (n) {
+    items.push(
+      it('graph.ask-explain', `Explain ${what}`, 'Claude explains it in chat'),
+      it('graph.ask-missing', `What's missing around ${what}?`, 'gaps, risks, forgotten steps'),
+      it('graph.ask-next', 'Suggest what comes next', 'Claude adds nodes after it'),
+      it('graph.ask-break', 'Break it into steps', 'smaller nodes, connected'),
+      it('graph.ask-critique', 'Critique it', 'the honest take, briefly'),
+      it('graph.ask-rename', 'Better name?', 'Claude proposes a label'),
+    );
+    if (n >= 2) items.push(it('graph.connect-selected', 'Connect them', `chain ${n} nodes in reading order`));
+    else items.push(it('graph.add-here', 'Add a node here', 'a new idea at this spot'));
+  } else {
+    items.push(
+      it('graph.ask-see', 'What do you see?', 'Claude reads the whole board'),
+      it('graph.ask-structure', 'Suggest a structure', 'a skeleton to start from'),
+      it('graph.ask-review', 'Review the flow', 'order, gaps, naming'),
+      it('graph.add-here', 'Add a node here', 'a new idea at this spot'),
+      it('graph.auto-layout', 'Auto-layout', 'tidy the board as a tree'),
+    );
+  }
+  items.push(it('graph.open-chat', 'Open chat', 'type to Claude'), it('graph.paste-screenshot', 'Paste a screenshot', 'drop or paste an image onto the board'));
+  return items;
+}
+
+/** Ask Claude about the focused nodes (or the board). */
+function askAbout(question) {
+  const ids = pipFocus();
+  if (!ids.length) { emitAsk(question, []); return; }
+  if (!ids.every((id) => sel.has(id)) || sel.size !== ids.length) setSelection(ids);
+  emitAsk(question, ids);
 }
 
 const PICKS = {
+  'graph.ask-explain': () => askAbout(pipFocus().length ? 'Explain the selected part of this graph.' : 'Explain this graph.'),
+  'graph.ask-missing': () => askAbout('What is missing around the selected nodes? Name gaps, risks and forgotten steps; add the important ones as nodes near them.'),
+  'graph.ask-next': () => askAbout('Suggest what comes next after the selected nodes, and add the best 2–4 as connected nodes.'),
+  'graph.ask-break': () => askAbout('Break the selected node(s) into smaller concrete steps as connected nodes.'),
+  'graph.ask-critique': () => askAbout('Critique the selected part honestly and briefly: what is unclear, risky or over-engineered?'),
+  'graph.ask-rename': () => askAbout('Propose a better, shorter label for the selected node(s) and apply it with graph.node.set if it is clearly better.'),
+  'graph.ask-see': () => askAbout('What do you see on this board? Summarize the flow in a few lines and point at anything odd.'),
+  'graph.ask-structure': () => askAbout('Suggest a structure for what I am trying to design here and add a small skeleton of nodes I can edit.'),
+  'graph.ask-review': () => askAbout('Review this flow: order, gaps and naming. Highlight what you talk about.'),
   'graph.add-here': () => {
     const at = suggestCtx?.at && num(suggestCtx.at.x, null) != null ? suggestCtx.at : pointOfInterest();
     const id = addNodeAt('idea', at, { edit: false });
