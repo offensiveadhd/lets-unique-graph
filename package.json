@@ -1,6 +1,6 @@
 {
   "name": "lets-unique-graph",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "graph — the first lets unique: talk to Claude in diagrams.",
   "type": "module",
   "private": true,

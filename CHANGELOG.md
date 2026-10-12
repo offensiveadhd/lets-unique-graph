@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-10-13
+
+- Fix: the page's favicon pointed at `../icon.svg`, which the host resolves
+  outside the unique (404); it is `icon.svg` now (the host looks in `ui/`
+  first, then the unique root).
+
 ## 0.3.1 — 2026-10-13
 
 - The companion is **Doto** (lets 0.5.0): the click menu and the "away" toasts
