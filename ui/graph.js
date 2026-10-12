@@ -1589,7 +1589,7 @@ function sendToClaude() {
   btnSend.classList.add('sent');
   react('cheer');
   toast(G.nodes.size ? `Sent ${G.nodes.size} node${G.nodes.size === 1 ? '' : 's'} to Claude — continue in Claude Code` : 'Sent an empty board to Claude', 'ok');
-  if (hasShell && shell.listening === false) toast('Pip is away — Claude reads this with your next message in Claude Code', 'info', 4500);
+  if (hasShell && shell.listening === false) toast('Doto is away. Claude reads this with your next message in Claude Code.', 'info', 4500);
 }
 
 /** Play one of the companion's short expressions, if the shell has them (0.4.0+). */
@@ -1605,7 +1605,7 @@ function emitAsk(question, ids = null) {
   lets.emitNow('graph.ask', { question, selection, labels, graph: exportGraph() });
   try { shell.chat?.open?.(); shell.chat?.append?.('you', labels.length ? `${question}  ·  ${labels.join(', ')}` : question); } catch { /* chat optional */ }
   if (!hasShell) toast('Question sent to Claude', 'ok');
-  else if (shell.listening === false) toast('Pip is away — Claude reads this with your next message in Claude Code', 'info', 4500);
+  else if (shell.listening === false) toast('Doto is away. Claude reads this with your next message in Claude Code.', 'info', 4500);
 }
 
 // ───────────────────────────── 10. incoming commands ─────────────────────────────
@@ -2098,7 +2098,7 @@ let suggestCtx = null;
  * @returns {{id:string, label:string, hint?:string, run:Function}[]}
  */
 /** The node ids a suggestion is about: the selection, else the node under the pointer when summoned. */
-function pipFocus() {
+function dotoFocus() {
   const ids = (suggestCtx?.selection || []).filter((id) => G.nodes.has(id));
   if (ids.length) return ids;
   const hov = suggestCtx?.hover;
@@ -2106,7 +2106,7 @@ function pipFocus() {
 }
 
 /**
- * Pip's click menu. Everything here is about what the human is looking at:
+ * Doto's click menu. Everything here is about what the human is looking at:
  * with a selection (or a hovered node) the questions target it; on empty
  * space they target the whole board. Every "ask" item becomes a `graph.ask`
  * event with the question, the ids and the labels, so Claude answers in chat
@@ -2114,7 +2114,7 @@ function pipFocus() {
  */
 function quickSuggestions(ctx) {
   suggestCtx = ctx && typeof ctx === 'object' ? ctx : entityContext();
-  const focus = pipFocus();
+  const focus = dotoFocus();
   const n = focus.length;
   const names = focus.map((id) => G.nodes.get(id)?.label).filter(Boolean);
   const what = n === 1 ? `“${(names[0] || 'this').slice(0, 24)}”` : n ? `these ${n}` : 'the board';
@@ -2147,14 +2147,14 @@ function quickSuggestions(ctx) {
 
 /** Ask Claude about the focused nodes (or the board). */
 function askAbout(question) {
-  const ids = pipFocus();
+  const ids = dotoFocus();
   if (!ids.length) { emitAsk(question, []); return; }
   if (!ids.every((id) => sel.has(id)) || sel.size !== ids.length) setSelection(ids);
   emitAsk(question, ids);
 }
 
 const PICKS = {
-  'graph.ask-explain': () => askAbout(pipFocus().length ? 'Explain the selected part of this graph.' : 'Explain this graph.'),
+  'graph.ask-explain': () => askAbout(dotoFocus().length ? 'Explain the selected part of this graph.' : 'Explain this graph.'),
   'graph.ask-missing': () => askAbout('What is missing around the selected nodes? Name gaps, risks and forgotten steps; add the important ones as nodes near them.'),
   'graph.ask-next': () => askAbout('Suggest what comes next after the selected nodes, and add the best 2–4 as connected nodes.'),
   'graph.ask-break': () => askAbout('Break the selected node(s) into smaller concrete steps as connected nodes.'),
@@ -2344,7 +2344,7 @@ let shell = {
 let hasShell = false;
 if (ShellApi && typeof ShellApi.mount === 'function') {
   try {
-    shell = ShellApi.mount(lets, { root: document.body, entity: { name: 'Pip' }, context: entityContext, quickSuggestions }) || shell;
+    shell = ShellApi.mount(lets, { root: document.body, entity: { name: 'Doto' }, context: entityContext, quickSuggestions }) || shell;
     hasShell = true;
   } catch (err) {
     console.warn('[graph] Shell.mount failed — running without the shell:', err?.message || err);

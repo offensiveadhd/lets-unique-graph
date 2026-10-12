@@ -1,7 +1,7 @@
 {
   "lip": 1,
   "name": "graph",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "title": "Graph — talk in diagrams",
   "description": "A dark-violet node/edge board. Draw flows and ideas; the companion and Claude read the same graph and answer by editing it.",
   "entry": "ui/index.html",

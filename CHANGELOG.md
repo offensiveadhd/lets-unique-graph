@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-10-13
+
+- The companion is **Doto** (lets 0.5.0): the click menu and the "away" toasts
+  say Doto; GUIDE describes his voice on the board (do, then tell; one short
+  line ending on a dot; layout changes still need a yes).
+- README screenshot re-captured with Doto.
+
 ## 0.3.0 — 2026-10-12
 
 - **Send to Claude is a handoff.** The manifest declares

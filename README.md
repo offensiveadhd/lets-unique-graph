@@ -1,6 +1,6 @@
 <p align="center"><img src="icon.svg" width="72" alt=""></p>
 <h1 align="center">graph</h1>
-<p align="center"><b>Talk to Claude in diagrams.</b><br>The first <a href="https://github.com/TikoTikTok/lets">lets</a> unique: a dark-violet node/edge board where you draw the thing you mean while you chat, and the companion (Pip) reads, points, suggests and edits the same board.</p>
+<p align="center"><b>Talk to Claude in diagrams.</b><br>The first <a href="https://github.com/TikoTikTok/lets">lets</a> unique: a dark-violet node/edge board where you draw the thing you mean while you chat, and the companion (Doto) reads, points, suggests and edits the same board.</p>
 
 ---
 
@@ -20,7 +20,7 @@ Manual: `/lets store graph` (inspect → confirm), or clone this repo into `~/.l
 - Node kinds: idea, step, decision, data, note, image, group. Keys 1–5 change the kind of the selection.
 - Toolbar: add per kind, connect mode, tree / grid / radial auto-layout, fit, new, **Send to Claude**, **Ask**, chat, companion, `?` shortcuts.
 - **Send to Claude** hands the board over: the engine saves it as a session, the window says goodbye and closes, and Claude answers in the Claude Code chat. Say *continue* (or `/lets graph resume`) and the board comes back as you left it, with Claude's suggestions drawn in.
-- Right-click summons or dismisses Pip; click Pip for questions about what you selected ("Explain this", "What's missing around …?", "Suggest what comes next", "Break it into steps", "Critique it", "Better name?") or about the whole board ("What do you see?", "Suggest a structure", "Review the flow").
+- Right-click summons or dismisses Doto; click Doto for questions about what you selected ("Explain this", "What's missing around …?", "Suggest what comes next", "Break it into steps", "Critique it", "Better name?") or about the whole board ("What do you see?", "Suggest a structure", "Review the flow").
 - Paste or drop a screenshot: it becomes an image node and Claude gets the file path.
 - Everything persists locally per window and survives reloads.
 
