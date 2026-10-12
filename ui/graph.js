@@ -23,7 +23,7 @@ import { treeLayout, gridLayout, radialLayout, findFreeSpot, bounds, contains, i
 
 // ───────────────────────────── 1. constants & helpers ─────────────────────────────
 
-const VERSION = '0.1.0';
+const VERSION = '0.3.0';
 const CAPS = ['entity', 'chat', 'components', 'media.image', 'clipboard'];
 const NS = 'http://www.w3.org/2000/svg';
 const Z_MIN = 0.25;
@@ -1364,6 +1364,7 @@ function addEdge(from, to) {
   if (ex) return ex.id;
   const e = normEdge({ id: newId('e_'), from, to });
   mutate('connect', 'user', (t) => putEdge(t, e));
+  react('wink');
   return e.id;
 }
 
@@ -1573,16 +1574,27 @@ function emitGranular(ch) {
   if (delE.length) lets.emit('graph.edge.delete', { ids: delE });
 }
 
-/** "Send to Claude": graph.export with the full graph. */
+/**
+ * "Send to Claude": graph.export with the full graph. The engine saves it as a
+ * session and (by default) asks this window to close — Claude answers in the
+ * Claude Code chat, and `/lets graph resume` brings the board back.
+ */
 function sendToClaude() {
   closeEditor(true);
   changedSoon.flush();
+  save();
   lets.emitNow('graph.export', { graph: exportGraph() });
   btnSend.classList.remove('sent');
   void btnSend.getBoundingClientRect();
   btnSend.classList.add('sent');
-  toast(G.nodes.size ? `Sent ${G.nodes.size} node${G.nodes.size === 1 ? '' : 's'} to Claude` : 'Sent an empty board to Claude', 'ok');
+  react('cheer');
+  toast(G.nodes.size ? `Sent ${G.nodes.size} node${G.nodes.size === 1 ? '' : 's'} to Claude — continue in Claude Code` : 'Sent an empty board to Claude', 'ok');
   if (hasShell && shell.listening === false) toast('Pip is away — Claude reads this with your next message in Claude Code', 'info', 4500);
+}
+
+/** Play one of the companion's short expressions, if the shell has them (0.4.0+). */
+function react(name) {
+  try { shell.entity?.react?.(name); } catch { /* optional */ }
 }
 
 /** graph.ask with the selection (or explicit ids) and the full graph; mirrors the question in chat. */

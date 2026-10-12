@@ -3,47 +3,169 @@
   "$id": "https://lets.dev/schemas/lip/1/unique.json",
   "title": "LIP unique manifest",
   "type": "object",
-  "required": ["lip", "name", "version", "title", "entry", "domains"],
+  "required": [
+    "lip",
+    "name",
+    "version",
+    "title",
+    "entry",
+    "domains"
+  ],
   "properties": {
-    "lip": { "type": "integer", "const": 1 },
-    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,31}$" },
-    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" },
-    "title": { "type": "string", "minLength": 1, "maxLength": 80 },
-    "description": { "type": "string", "maxLength": 400 },
-    "entry": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.html?$" },
-    "guide": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.md$" },
-    "icon": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.(svg|png)$" },
+    "lip": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,31}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "entry": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.html?$"
+    },
+    "guide": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.md$"
+    },
+    "icon": {
+      "type": "string",
+      "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.(svg|png)$"
+    },
     "domains": {
-      "type": "array", "minItems": 1, "maxItems": 8,
-      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,23}$" }
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{1,23}$"
+      }
     },
     "capabilities": {
       "type": "array",
-      "items": { "type": "string", "enum": ["entity", "chat", "components", "media.image", "media.file", "clipboard", "camera", "microphone", "location"] }
+      "items": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "chat",
+          "components",
+          "media.image",
+          "media.file",
+          "clipboard",
+          "camera",
+          "microphone",
+          "location"
+        ]
+      }
     },
-    "events": { "type": "object", "additionalProperties": { "$ref": "#/$defs/msgdecl" } },
-    "commands": { "type": "object", "additionalProperties": { "$ref": "#/$defs/msgdecl" } },
+    "events": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/msgdecl"
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/msgdecl"
+      }
+    },
     "permissions": {
       "type": "object",
       "properties": {
-        "fs.write": { "type": "array", "items": { "type": "string", "enum": ["uploads", "exports"] } },
-        "net": { "type": "array", "items": { "type": "string" } }
+        "fs.write": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "uploads",
+              "exports"
+            ]
+          }
+        },
+        "net": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       },
       "additionalProperties": false
     },
-    "engine": { "type": "string" },
-    "author": { "type": "object", "properties": { "name": { "type": "string" }, "url": { "type": "string" } } },
-    "license": { "type": "string" },
-    "repository": { "type": "string" },
-    "tags": { "type": "array", "items": { "type": "string" } }
+    "session": {
+      "type": "object",
+      "description": "Which of the unique's types play the handoff roles: `export` (the human sent the window to Claude; the engine saves it and closes the window), `snapshot` (a reply to a state query; updates the saved session), `restore` (the command that rebuilds the window from a saved payload). Defaults: <domain>.export / <domain>.snapshot / <domain>.load.",
+      "properties": {
+        "export": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,4}$"
+        },
+        "snapshot": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,4}$"
+        },
+        "restore": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){1,4}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "engine": {
+      "type": "string"
+    },
+    "author": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "license": {
+      "type": "string"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
   },
   "$defs": {
     "msgdecl": {
       "type": "object",
-      "required": ["summary"],
+      "required": [
+        "summary"
+      ],
       "properties": {
-        "summary": { "type": "string", "maxLength": 200 },
-        "schema": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.json$" }
+        "summary": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "schema": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.json$"
+        }
       }
     }
   }

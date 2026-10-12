@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 — 2026-10-12
+
+- **Send to Claude is a handoff.** The manifest declares
+  `session: {export: graph.export, snapshot: graph.snapshot, restore: graph.load}`;
+  the engine (lets 0.4.0) saves the board, closes the window and Claude answers
+  in the Claude Code chat. `/lets graph resume` reopens the board intact.
+- The board plays the companion's new expressions: a wink when you connect
+  two nodes, a cheer when you press Send.
+- GUIDE: handoff/resume etiquette; expressions for Claude.
+- Manifest: `repository` points at this repo; `engine: ">=0.4.0"`.
+
 ## 0.2.0 — 2026-10-10
 
 - Moved out of the engine repo into its own repository (history preserved).

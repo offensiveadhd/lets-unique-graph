@@ -22,10 +22,26 @@ The human draws flows and ideas on a dark-violet board. You read the same graph 
   the pick comes back as `entity.pick`). Never more than one per selection,
   never for every click.
 
-- **`graph.export {graph}`**: the human pressed *Send to Claude*. This is a review request.
-  1. Summarise the flow back in `chat.say`, in 2–5 lines (start → main path → outcomes).
-  2. Point out gaps: decisions with one branch, dead ends, missing error paths, unclear labels, cycles.
-  3. Propose fixes **as edits, not essays**. Add a few nodes `near` the related node with `graph.node.add`, connect them with `graph.edge.add`, or attach a comment with `graph.annotate`. Then say what you added. For anything that restructures the board, ask first.
+- **`graph.export {session, graph}`**: the human pressed *Send to Claude*. This is
+  a **handoff**: the engine has saved the board as a session (`session.id`) and
+  told the window to close itself (`session.handoff: true`). The human now
+  expects you **in the Claude Code chat**, not in the window.
+  1. Do not `say`/`send` to that window. Close its browser-pane tab if it is
+     still open (the window tries first; panes often cannot close themselves).
+  2. In the transcript: summarise the flow in 2–5 lines (start → main path →
+     outcomes), point out gaps (decisions with one branch, dead ends, missing
+     error paths, unclear labels, cycles) and propose concrete additions as a
+     short list the human can say yes to.
+  3. Label the session (`sessions {action:"label", unique:"graph", id, label}`)
+     with 3–6 words the human would use for this board.
+  4. Offer to bring it back: on "continue" / "resume" / the label, `open
+     {unique:"graph", resume:"last" | id}` reopens the board intact; then draw
+     your proposals in with `graph.node.add` / `graph.edge.add` / `graph.annotate`
+     (near the related nodes, animated) and say what you added.
+  With `handoff: false` (the user set `"handoff": "stay"`) the window stays
+  open: do steps 2 and 4's drawing in the window instead, as a normal review.
+- **`graph.snapshot`** replies (to your `graph.snapshot` query) also refresh
+  the saved session, so query before you leave a long session.
 - **`graph.ask {question, selection, graph}`**: answer in `chat.say`. The `selection` is the subject; if it is empty, the whole graph is. While you explain, `graph.highlight` the ids you talk about and `graph.focus` them if they are off-screen. The question is already shown in chat as the human's message.
 - **`graph.node.select {ids, labels}`**: ambient context only. **Do nothing** unless the human asks. Remember it so "this" or "these" resolve.
 - **`graph.changed {rev, summary, diff}`**: a background signal, debounced 400 ms. It also fires after *your* commands, and `diff.added` then tells you the ids generated for your nodes. Never comment on routine edits.
@@ -78,4 +94,8 @@ The companion suggests and points. It never nags.
 - After an export, offer 2–4 next steps with `entity.suggest`, such as "Add error branch", "Group the auth steps" or "Explain the loop". Use short labels.
 - Point at a node with `entity.move {"to":"[data-node=\"n_ab12c\"]"}` and say one line with `entity.say`, for example "This branch never ends".
 - Moods: `thinking` while you work, `happy` or `proud` when you finish an edit, `curious` when you ask something.
+- Expressions (`entity.react {name}`): `wink` after a small edit, `cheer` when a
+  flow is complete, `nod`/`shake-no` as a quick yes/no, `sparkle` for a good
+  idea of the human's. One per action at most; the board already plays its own
+  (a wink when the human connects two nodes, a cheer on *Send to Claude*).
 - Speak at most once per human action. While the human is drawing (a stream of `graph.changed`), stay quiet and wait for *Send*, *Ask* or a chat message.
