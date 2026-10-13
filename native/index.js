@@ -40,7 +40,9 @@ const PIC_MAX_H = 480;          // picture height cap, px
 const PIC_MIN_H = 120;
 const VIEW_PAD = 40;            // graph units around the board in the picture
 const VIEW_MIN = { w: 360, h: 160 };   // a lone node is not blown up to the pane width
+const EMPTY_VIEW = { w: 480, h: 270 }; // what an empty board shows around its centre: room for Doto and the hint
 const NOMINAL = { w: 1200, h: 800 };   // the web board's usual screen: "the view centre" of an empty board
+const LIVE = true;                     // the picture is an interactive SVG: hover titles, Doto blinks, highlights pulse (the host draws it in a script-less frame)
 
 const BG = '#120b1f';
 const TEXT = '#efe9ff';
@@ -1021,18 +1023,59 @@ function onAction(state, act, ctx) {
 
 // ───────────────────────────── 9. the picture (one SVG) ─────────────────────────────
 
-/** A node's outline in graph units: a rect, the decision's hexagon, the data cylinder. */
-function shapeOf(n) {
+/** A node's outline in graph units: a rect, the decision's hexagon, the data cylinder; `title` becomes its hover tooltip. */
+function shapeOf(n, title) {
   const x = n.x, y = n.y, w = n.w, h = n.h;
+  let s;
   if (n.kind === 'decision') {
     const k = r(Math.min(h / 2, w / 4)), my = r(y + h / 2);
-    return `<path d='M${x + k},${y}H${x + w - k}L${x + w},${my}L${x + w - k},${y + h}H${x + k}L${x},${my}Z'/>`;
-  }
-  if (n.kind === 'data') {
+    s = `<path d='M${x + k},${y}H${x + w - k}L${x + w},${my}L${x + w - k},${y + h}H${x + k}L${x},${my}Z'/>`;
+  } else if (n.kind === 'data') {
     const e = r(Math.min(10, h / 5)), hw = r(w / 2);
-    return `<path d='M${x},${y + e}A${hw},${e} 0 0 1 ${x + w},${y + e}V${y + h - e}A${hw},${e} 0 0 1 ${x},${y + h - e}ZM${x},${y + e}A${hw},${e} 0 0 0 ${x + w},${y + e}'/>`;
+    s = `<path d='M${x},${y + e}A${hw},${e} 0 0 1 ${x + w},${y + e}V${y + h - e}A${hw},${e} 0 0 1 ${x},${y + h - e}ZM${x},${y + e}A${hw},${e} 0 0 0 ${x + w},${y + e}'/>`;
+  } else s = `<rect x='${x}' y='${y}' width='${w}' height='${h}' rx='${n.kind === 'group' ? 16 : n.kind === 'note' ? 8 : 12}'/>`;
+  return title ? s.replace(/\/>$/, `><title>${xml(title)}</title></${s.startsWith('<rect') ? 'rect' : 'path'}>`) : s;
+}
+
+/** What hovering a node says: its name, kind and the start of its details. */
+const tooltip = (n) => `${nodeName(n)} · ${n.meta && n.meta.attachedTo ? 'note' : n.kind}${n.text && n.kind !== 'note' ? ` — ${fit(n.text, 90)}` : ''}`;
+
+/**
+ * Doto as a dot on the board (the web sprite, reduced): an aura, a glossy
+ * body, two eyes and a smile; with `live`, he blinks. `R` is his radius in
+ * graph units; the gradients `${P}da` / `${P}db` are in the document's defs.
+ */
+function dotoSvg(cx, cy, R, P, live, name) {
+  const eyeY = r1(cy - R * 0.1), dx = R * 0.36, ry = r1(R * 0.22), ink = '#1a1030';
+  const blink = live ? `<animate attributeName='ry' values='${ry};${ry};${r1(R * 0.03)};${ry}' keyTimes='0;.9;.95;1' dur='4.2s' repeatCount='indefinite'/>` : '';
+  const eye = (x) => `<ellipse cx='${r1(x)}' cy='${eyeY}' rx='${r1(R * 0.17)}' ry='${ry}' fill='${ink}'>${blink}</ellipse>`;
+  const sx = r1(cx - R * 0.35), sy = r1(cy - R * 0.5);
+  return `<g><title>${xml(name)}</title>` +
+    `<circle cx='${r1(cx)}' cy='${r1(cy)}' r='${r1(R * 2)}' fill='url(#${P}da)'/>` +
+    `<circle cx='${r1(cx)}' cy='${r1(cy)}' r='${r1(R)}' fill='url(#${P}db)' stroke='#e9dcff' stroke-opacity='.45' stroke-width='${r1(Math.max(0.8, R * 0.06))}'/>` +
+    `<ellipse cx='${sx}' cy='${sy}' rx='${r1(R * 0.3)}' ry='${r1(R * 0.14)}' fill='#fff' fill-opacity='.35' transform='rotate(-24 ${sx} ${sy})'/>` +
+    eye(cx - dx) + eye(cx + dx) +
+    `<path d='M${r1(cx - R * 0.22)},${r1(cy + R * 0.38)}Q${r1(cx)},${r1(cy + R * 0.62)} ${r1(cx + R * 0.22)},${r1(cy + R * 0.38)}' fill='none' stroke='${ink}' stroke-width='${r1(Math.max(0.8, R * 0.09))}' stroke-linecap='round'/>` +
+    '</g>';
+}
+const dotoDefs = (P) => `<radialGradient id='${P}da'><stop offset='0' stop-color='#a66bff' stop-opacity='.38'/><stop offset='1' stop-color='#a66bff' stop-opacity='0'/></radialGradient>` +
+  `<radialGradient id='${P}db' cx='38%' cy='30%' r='75%'><stop offset='0' stop-color='#efe4ff'/><stop offset='.55' stop-color='#a66bff'/><stop offset='1' stop-color='#5a2fb8'/></radialGradient>`;
+
+/**
+ * Where Doto sits: beside the node last touched (the one selected node, else
+ * the newest), on the side with room; the view's centre on an empty board;
+ * its lower-right corner when that node is out of the picture.
+ */
+function dotoSpot(state, idx, shown, view, R) {
+  const inside = (cx, cy) => cx - 2 * R >= view.x && cx + 2 * R <= view.x + view.w && cy - 2 * R >= view.y && cy + 2 * R <= view.y + view.h;
+  const real = state.graph.nodes.filter((n) => !(n.meta && n.meta.attachedTo));
+  if (!real.length) return { x: view.x + view.w / 2, y: view.y + view.h / 2, where: 'centre' };
+  const a = state.sel.length === 1 ? idx.get(state.sel[0]) : real[real.length - 1];
+  if (a && shown.includes(a)) {
+    const gap = R * 1.8, cy = a.y + a.h / 2;
+    for (const [x, y] of [[a.x + a.w + gap, cy], [a.x - gap, cy], [a.x + a.w / 2, a.y - gap], [a.x + a.w / 2, a.y + a.h + gap]]) if (inside(x, y)) return { x, y, where: 'beside' };
   }
-  return `<rect x='${x}' y='${y}' width='${w}' height='${h}' rx='${n.kind === 'group' ? 16 : n.kind === 'note' ? 8 : 12}'/>`;
+  return { x: view.x + view.w - 2.4 * R, y: view.y + view.h - 2.4 * R, where: 'corner' };
 }
 
 /** Smooth cubic between two rects, leaving and entering on facing sides (graph.js edgeGeometry). */
@@ -1074,10 +1117,15 @@ const nodeName = (n) => n.label || (n.kind === 'note' && n.text) || (n.kind === 
  */
 function drawBoard(state, ctx, idx, now, W, lite) {
   const g = state.graph;
+  const live = LIVE && !lite;
   const framed = state.ui.frame.map((id) => idx.get(id)).filter(Boolean);
-  const b = bounds(framed.length ? framed : g.nodes);
+  const empty = !g.nodes.length;
+  // an empty board is drawn around its centre, where the first node will land (viewCentre)
+  const c0 = viewCenter(state);
+  const b = bounds(framed.length ? framed : g.nodes) || { x: c0.x, y: c0.y, w: 0, h: 0 };
+  const minV = empty ? EMPTY_VIEW : VIEW_MIN;
   // the viewBox: the board plus padding, at least VIEW_MIN, stretched to the picture's aspect
-  let vw = Math.max(b.w + 2 * VIEW_PAD, VIEW_MIN.w), vh = Math.max(b.h + 2 * VIEW_PAD, VIEW_MIN.h);
+  let vw = Math.max(b.w + 2 * VIEW_PAD, minV.w), vh = Math.max(b.h + 2 * VIEW_PAD, minV.h);
   let H = r((W * vh) / vw);
   if (H > PIC_MAX_H) { H = PIC_MAX_H; vw = (vh * W) / H; } else if (H < PIC_MIN_H) { H = PIC_MIN_H; vh = (vw * H) / W; }
   const view = { x: b.x + b.w / 2 - vw / 2, y: b.y + b.h / 2 - vh / 2, w: vw, h: vh };
@@ -1093,7 +1141,7 @@ function drawBoard(state, ctx, idx, now, W, lite) {
   const shown = g.nodes.filter((n) => intersects(n, view));
 
   const out = [`<svg xmlns='http://www.w3.org/2000/svg' viewBox='${r(view.x)} ${r(view.y)} ${r(vw)} ${r(vh)}' width='${W}' height='${H}' font-family='system-ui,-apple-system,Segoe UI,sans-serif'>`];
-  out.push('<defs>', marker(`${P}a`, EDGE), marker(`${P}s`, SEL), hlColors.map((c, i) => marker(`${P}h${i}`, c)).join(''));
+  out.push('<defs>', marker(`${P}a`, EDGE), marker(`${P}s`, SEL), hlColors.map((c, i) => marker(`${P}h${i}`, c)).join(''), dotoDefs(P));
   const dots = 40 / u >= 12;
   if (dots) out.push(`<pattern id='${P}g' width='40' height='40' patternUnits='userSpaceOnUse'><circle cx='20' cy='20' r='${r1(Math.max(1.2, u))}' fill='#2b1f47'/></pattern>`);
   out.push('</defs>', `<rect x='${r(view.x)}' y='${r(view.y)}' width='${r(vw) + 1}' height='${r(vh) + 1}' fill='${BG}'/>`);
@@ -1141,7 +1189,7 @@ function drawBoard(state, ctx, idx, now, W, lite) {
     if (n.kind === 'group') continue;
     const k = `${n.kind}|${n.color || KIND_COLOR[n.kind]}`;
     if (!buckets.has(k)) buckets.set(k, []);
-    buckets.get(k).push(shapeOf(n));
+    buckets.get(k).push(shapeOf(n, live ? tooltip(n) : ''));
   }
   for (const [k, shapes] of buckets) {
     const [kind, c] = k.split('|');
@@ -1155,13 +1203,14 @@ function drawBoard(state, ctx, idx, now, W, lite) {
   }
 
   // selection (cyan) and highlights (their colour): a soft wide stroke plus a crisp one
-  const glow = (color, list) => {
+  const glow = (color, list, pulse) => {
     if (!list.length) return;
-    const s = list.map(shapeOf).join('');
-    out.push(`<g fill='none' stroke='${color}'><g stroke-width='${sw.glow}' stroke-opacity='.28'>${s}</g><g stroke-width='${sw.line}'>${s}</g></g>`);
+    const s = list.map((n) => shapeOf(n)).join('');
+    const anim = pulse && live ? "<animate attributeName='stroke-opacity' values='.28;.7;.28' dur='1.1s' repeatCount='indefinite'/>" : '';
+    out.push(`<g fill='none' stroke='${color}'><g stroke-width='${sw.glow}' stroke-opacity='.28'>${anim}${s}</g><g stroke-width='${sw.line}'>${s}</g></g>`);
   };
-  glow(SEL, shown.filter((n) => sel.has(n.id) && !hl.has(n.id)));
-  for (const c of hlColors) glow(c, shown.filter((n) => hl.get(n.id) === c));
+  glow(SEL, shown.filter((n) => sel.has(n.id) && !hl.has(n.id)), false);
+  for (const c of hlColors) glow(c, shown.filter((n) => hl.get(n.id) === c), true);
 
   // text: centred labels, left-aligned titles and note bodies, edge labels
   if (text) {
@@ -1189,6 +1238,21 @@ function drawBoard(state, ctx, idx, now, W, lite) {
     if (body.length) out.push(`<g ${base} fill-opacity='.78' dominant-baseline='hanging'>`, body.join(''), '</g>');
     if (elabels.length) out.push(`<g font-size='${r1(fs * 0.85)}' fill='#cfc6ef' text-anchor='middle' dominant-baseline='central' stroke='${BG}' stroke-width='${r1(fs * 0.3)}' paint-order='stroke'>`, elabels.join(''), '</g>');
   }
+
+  // Doto on the board, and on an empty one the hint under him
+  if (!lite) {
+    const R = clamp(13 * u, 10, 32);
+    const spot = dotoSpot(state, idx, shown, view, R);
+    out.push(dotoSvg(spot.x, spot.y, R, P, live, (ctx.persona && ctx.persona.name) || 'Doto'));
+    if (empty && text) {
+      const y = spot.y + R * 2.6, lh = fs * 1.5;
+      out.push(`<g text-anchor='middle' fill='${TEXT}' font-size='${r1(fs)}' dominant-baseline='hanging'>`,
+        textEl(spot.x, y, 'Empty board', " font-weight='600'"),
+        textEl(spot.x, y + lh, 'type a label in "add" below, or ask Claude to draw it', " fill-opacity='.62'"),
+        state.intent ? textEl(spot.x, y + 2 * lh, `for: ${fit(state.intent, 56)}`, " fill-opacity='.62' font-style='italic'") : '',
+        '</g>');
+    }
+  }
   out.push('</svg>');
   return { svg: out.join(''), height: H };
 }
@@ -1196,18 +1260,24 @@ function drawBoard(state, ctx, idx, now, W, lite) {
 /** The picture's alt text (what a surface without SVG shows): counts and the first connections. */
 function describe(state, idx) {
   const g = state.graph;
+  if (!g.nodes.length) return 'empty board: nothing drawn yet';
   const flows = g.edges.slice(0, 10).map((e) => `${fit(nodeName(idx.get(e.from)), 18)} → ${fit(nodeName(idx.get(e.to)), 18)}`);
   return fit(`graph: ${plural(g.nodes.length, 'node')}, ${plural(g.edges.length, 'edge')}${flows.length ? '. ' + flows.join('; ') : ''}`, 400);
 }
 
-/** The picture element: an SVG sized to the pane, a lighter one when big, alt text as the last resort. */
+/**
+ * The picture element: an SVG sized to the pane (interactive, so hovering a
+ * node shows its tooltip and the animations run), a lighter one when big,
+ * alt text as the last resort.
+ */
 function picture(state, ui, ctx, idx, now) {
   const W = Math.min(Math.max(ctx.viewport.cols, 30) * 8, 720);
   const alt = describe(state, idx);
   let pic = drawBoard(state, ctx, idx, now, W, false);
-  if (pic.svg.length > SVG_BUDGET) pic = drawBoard(state, ctx, idx, now, W, true);
+  let live = LIVE;
+  if (pic.svg.length > SVG_BUDGET) { pic = drawBoard(state, ctx, idx, now, W, true); live = false; }
   if (pic.svg.length > SVG_BUDGET) return ui.text({ dimColor: true }, `${alt} (too big to draw here)`);
-  return ui.svg({ source: pic.svg, alt, width: W, height: pic.height });
+  return ui.svg({ source: pic.svg, alt, width: W, height: pic.height, isInteractive: live });
 }
 
 // ───────────────────────────── 10. the pane (render) ─────────────────────────────
@@ -1232,13 +1302,12 @@ function header(state, ui, sel) {
     state.ui.frame.length ? ui.text({ dimColor: true }, `showing ${plural(state.ui.frame.length, 'node')} up close`) : null);
 }
 
-/** The board is empty: what it is for and how to start. */
+/** The board is empty: one line under the picture (the picture says it too, for the surfaces that draw it). */
 function emptyHint(state, ui, ctx) {
   const who = (ctx.persona && ctx.persona.name) || 'Doto';
-  return ui.col({ borderStyle: 'round', borderDimColor: true, paddingX: 1 },
-    ui.text({ bold: true }, 'Empty board'),
-    state.intent ? ui.text({ italic: true }, `for: ${state.intent}`) : null,
-    ui.text({ dimColor: true }, `Type a label in "add" below and press Enter, or ask Claude to draw it. ${who} and Claude see the same board.`));
+  return ui.col({},
+    ui.text({ dimColor: true }, `Empty board. Type a label in "add" below and press Enter, or ask Claude to draw it. ${who} and Claude see the same board.`),
+    state.intent ? ui.text({ italic: true }, `for: ${state.intent}`) : null);
 }
 
 /** Every node as a button (a page of LIST_PAGE), selected ones primary, highlighted ones marked. */
@@ -1329,7 +1398,8 @@ function renderPane(state, ui, ctx) {
   return ui.col({ gap: 1 },
     header(state, ui, sel),
     state.notice ? ui.text({ color: 'success' }, state.notice) : null,
-    state.graph.nodes.length ? picture(state, ui, ctx, idx, now) : emptyHint(state, ui, ctx),
+    picture(state, ui, ctx, idx, now),
+    state.graph.nodes.length ? null : emptyHint(state, ui, ctx),
     nodeList(state, ui, sel, now),
     sel.length === 1 ? editor(state, ui, idx.get(sel[0]), idx) : sel.length > 1 ? multiEditor(state, ui, sel, idx) : null,
     addBlock(state, ui, sel, idx),

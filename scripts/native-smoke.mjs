@@ -106,7 +106,14 @@ step('open: session.opened + lip.ready; the empty hint and the intent', () => {
   assert.match(text, /Empty board/);
   assert.match(text, /for: plan the auth flow/);
   assert.match(text, /\[Send to Claude\]/, 'export() → the shell draws Send to Claude');
-  assert.equal(svgOf(g.tree()), null, 'no picture for an empty board');
+  const svg = svgOf(g.tree());
+  assert.ok(svg && svg.p.isInteractive === true, 'an empty board still has its picture, drawn interactive');
+  assert.match(svg.p.alt, /empty board/);
+  assert.match(svg.p.source, /<title>Doto<\/title>/, 'Doto sits on the board');
+  assert.match(svg.p.source, /<animate attributeName='ry'/, 'and blinks');
+  assert.match(svg.p.source, />Empty board<\/text>/, 'the hint is drawn in the picture');
+  assert.match(svg.p.source, /for: plan the auth flow/, 'with the intent');
+  assert.match(svg.p.source, /viewBox='360 265 480 270'/, 'centred on (600, 400), where the first node lands');
   assert.ok(keyed(g.tree(), 'add') && keyed(g.tree(), 'ask'), 'add and ask inputs');
 });
 
@@ -140,6 +147,9 @@ step('graph.node.add ×3 + graph.edge.add: 3 node buttons, an SVG with 3 rects a
   assert.equal((svg.p.source.match(/<path d='M-?\d+,-?\d+C/g) || []).length, 1, '1 edge path');
   assert.ok(svg.p.width >= 240 && svg.p.width <= 720 && svg.p.height >= 120 && svg.p.height <= 480, `size ${svg.p.width}x${svg.p.height}`);
   assert.match(svg.p.alt, /3 nodes, 1 edge/);
+  assert.match(svg.p.source, /<rect [^>]*><title>Start · step<\/title><\/rect>/, 'hovering a node says its name and kind');
+  assert.match(svg.p.source, /<title>Doto<\/title>/, 'Doto is on the board, beside the newest node');
+  assert.doesNotMatch(svg.p.source, />Empty board</, 'the hint is gone');
   const snap = g.snapshot();
   for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) assert.ok(!overlaps(snap.nodes[i], snap.nodes[j]), 'auto-placed without overlap');
   const near = snap.nodes.find((n) => n.id === ids[1]);
@@ -220,6 +230,7 @@ step('graph.snapshot: a reply with re = the command id', () => {
 step('graph.highlight and graph.focus: no throw; focus selects and frames; [] clears', () => {
   g.cmd('graph.highlight', { ids: ['a'], color: '#ffd166', ttl: 0 });
   assert.match(svgOf(g.tree()).p.source, /#ffd166/);
+  assert.match(svgOf(g.tree()).p.source, /stroke='#ffd166'><g stroke-width='[\d.]+' stroke-opacity='.28'><animate attributeName='stroke-opacity'/, 'a highlight pulses');
   assert.match(g.text(), /Start ✦/, 'highlighted nodes are marked in the list');
   const ev = g.cmd('graph.focus', { ids: [ids[2]] });
   assert.deepEqual(one(ev, 'graph.node.select').ids, [ids[2]]);
