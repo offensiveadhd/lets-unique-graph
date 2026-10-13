@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.0 — 2026-10-13
+
+- **The board opens inside Claude Code.** `/lets graph native` shows it as a
+  pane in Claude Code's sidebar (lets 0.7.0 with the lets-native mod) instead
+  of a browser window: a picture of the whole board, your nodes as buttons,
+  an editor for the selection (rename, kind, details, connect with an
+  optional label, unlink, note, remove), multi-select to connect or remove
+  several, an *add* box (a new node follows the selected one, linked) and an
+  *ask* box. Undo/redo, the three layouts, *zoom to selection* / *fit board*
+  and clear are in the header.
+- Claude and Doto behave the same in both modes: the same commands, events,
+  *Send to Claude* handoff and resume. In the pane, when Claude points at
+  nodes (`graph.focus`) they are selected and the picture zooms to them.
+- Manifest: `native` block, `engine: ">=0.7.0"`; the schema copy is synced
+  with the engine's. `scripts/validate.mjs` checks the native script parses;
+  `scripts/native-smoke.mjs` tests the pane headlessly.
+- GUIDE: a short *Native mode* section; duplicate event notes merged.
+
 ## 0.3.2 — 2026-10-13
 
 - Fix: the page's favicon pointed at `../icon.svg`, which the host resolves

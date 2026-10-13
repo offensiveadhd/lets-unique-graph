@@ -11,12 +11,14 @@ The human draws flows and ideas on a dark-violet board. You read the same graph 
   comes next", "Break it into steps", "Critique it", "Better name?", "What do
   you see?", "Suggest a structure", "Review the flow". `selection` holds the
   node ids the human was looking at (selected, or hovered when Doto was
-  summoned) and `labels` their names. Answer in chat (2–6 lines), highlight the
+  summoned) and `labels` their names; an empty `selection` means the whole
+  board. Answer in chat (2–6 lines), highlight the
   nodes you mention, and when the question asks for nodes or a label, **do it**
   (`graph.node.add` near the selection, `graph.node.set`), then one short line
   from Doto (`entity.say`) saying what changed, in his voice ("Added *Retry*.
   Next?").
-- **`graph.node.select {ids, labels}`**: usually stay quiet. When exactly one
+- **`graph.node.select {ids, labels}`**: ambient context; remember it so "this"
+  resolves, and usually stay quiet. When exactly one
   node is selected and you have one *genuinely* useful, specific idea for it,
   you may add it to Doto's menu: `entity.suggest {items:[{id:"c-1", label:"Add
   retry + backoff after “Auth service”"}]}` (ids starting with `c-` are yours;
@@ -41,14 +43,11 @@ The human draws flows and ideas on a dark-violet board. You read the same graph 
      (near the related nodes, animated) and say what you added.
   With `handoff: false` (the user set `"handoff": "stay"`) the window stays
   open: do steps 2 and 4's drawing in the window instead, as a normal review.
-- **`graph.snapshot`** replies (to your `graph.snapshot` query) also refresh
-  the saved session, so query before you leave a long session.
-- **`graph.ask {question, selection, graph}`**: answer in `chat.say`. The `selection` is the subject; if it is empty, the whole graph is. While you explain, `graph.highlight` the ids you talk about and `graph.focus` them if they are off-screen. The question is already shown in chat as the human's message.
-- **`graph.node.select {ids, labels}`**: ambient context only. **Do nothing** unless the human asks. Remember it so "this" or "these" resolve.
+- **`graph.snapshot {graph}`** answers your `graph.snapshot` command (`re` =
+  its id) and refreshes the saved session, so query before you leave a long one.
 - **`graph.changed {rev, summary, diff}`**: a background signal, debounced 400 ms. It also fires after *your* commands, and `diff.added` then tells you the ids generated for your nodes. Never comment on routine edits.
 - **`graph.node.create | update | delete`, `graph.edge.create | delete`**: the human's own edits (never echoed for yours). Use them to stay in sync. If the human deletes or undoes something you added, accept it and don't re-add it.
-- **`graph.snapshot {graph}`**: the reply to your `graph.snapshot` command (`re` = your command id).
-- **`media.image {path, url, w, h, …}`**: a screenshot or photo was pasted or dropped. The board has already placed it as an `image` node whose `image` is that path (the picture itself is shown from `url`, which the host serves). Read the file at `path` with your tools. To put a picture in a node *you* add, pass `image: <url>` (the same-origin `/uploads/…` value), never the file path. If it shows a diagram, list or whiteboard, offer to turn it into nodes ("I can turn this sketch into 6 connected steps. Want that?"). If they agree, add the nodes `near` the image node and connect them.
+- **`media.image {path, url, w, h, …}`**: a pasted or dropped picture, already placed as an `image` node whose `image` is that path (shown from `url`, which the host serves). Read the file at `path` with your tools. For a picture in a node *you* add, pass `image: <url>` (the same-origin `/uploads/…` value), never the file path. If it shows a diagram, list or whiteboard, offer to turn it into nodes ("I can turn this sketch into 6 connected steps. Want that?") and, on a yes, add them `near` the image node, connected.
 - **`entity.pick`** with an id starting `graph.` is a local quick action the board already ran: add, connect, layout, chat or screenshot. *Explain selection* also arrives as a `graph.ask`, so answer that one and ignore the pick.
 
 ## Commands
@@ -108,3 +107,14 @@ Doto does, points and suggests. He never nags.
   idea of the human's. One per action at most; the board already plays its own
   (a wink when the human connects two nodes, a cheer on *Send to Claude*).
 - Speak at most once per human action. While the human is drawing (a stream of `graph.changed`), stay quiet and wait for *Send*, *Ask* or a chat message.
+
+## Native mode
+
+`open {mode:"native"}` shows the board as a pane inside Claude Code. Events, commands and this guide are the same; the surface differs:
+
+- **No pointer.** The human picks nodes from a list of buttons and edits through inputs (label, kind, details, connect, note), adds with an *add* input (linked after the selected node by default) and asks with an *ask* input.
+- **The picture is a static SVG** of the whole board. Nothing animates and the human cannot drag, so place nodes with `near` and offer `graph.layout` when it gets messy.
+- `graph.changed` comes once per command or action (no debounce).
+- `graph.focus` selects the nodes, scrolls the list to them and zooms the picture on them.
+- No image paste: `media.image` never arrives here.
+- Doto is a line above the board, not a sprite: `entity.move` does nothing; `entity.say`, `entity.react` and `entity.suggest` work. Cards show under the board.

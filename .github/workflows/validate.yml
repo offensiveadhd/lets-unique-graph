@@ -13,3 +13,4 @@ jobs:
           node-version: 20
       - run: node scripts/validate.mjs
       - run: for f in ui/*.js; do node --check "$f"; done
+      - run: node --check native/index.js
