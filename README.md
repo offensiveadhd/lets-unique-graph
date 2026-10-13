@@ -23,6 +23,7 @@ Manual: `/lets store graph` (inspect → confirm), or clone this repo into `~/.l
 - Right-click summons or dismisses Doto; click Doto for questions about what you selected ("Explain this", "What's missing around …?", "Suggest what comes next", "Break it into steps", "Critique it", "Better name?") or about the whole board ("What do you see?", "Suggest a structure", "Review the flow").
 - Paste or drop a screenshot: it becomes an image node and Claude gets the file path.
 - Everything persists locally per window and survives reloads.
+- **Native view:** `/lets graph native` opens the board as a pane inside Claude Code (lets 0.7.0 and the lets-native mod) instead of a browser window. The pane shows the board as a picture, your nodes as a list of buttons, an editor for what you select (rename, kind, details, connect, note, remove), an *add* box and an *ask* box. Claude and Doto work the same way in both, and *Send to Claude* / resume carry the board across.
 
 ## How Claude drives it
 
@@ -36,16 +37,18 @@ The manifest's `session` block (`export: graph.export`, `snapshot: graph.snapsho
 ## Layout
 
 ```
-unique.json    LIP manifest (name, entry, domains, events, commands, permissions)
+unique.json    LIP manifest (name, entry, native, domains, events, commands, permissions)
 GUIDE.md       instructions for Claude
 CONTRACT.md    behaviour spec
 icon.svg
 schemas/       JSON Schemas
 ui/            index.html, graph.js (board), layout.js (auto-layouts), style.css
-scripts/       validate.mjs — manifest + schema check (zero dependencies)
+native/        index.js — the native view: the same board as a pane in Claude Code
+scripts/       validate.mjs — manifest + schema check, native/index.js parse (zero dependencies)
+               native-smoke.mjs — drives the native view headlessly through an engine checkout
 ```
 
-The UI imports the engine's SDK at runtime (`/sdk/lets-client.js`, `/sdk/lets-shell.js`); it has no build step and no dependencies.
+The UI imports the engine's SDK at runtime (`/sdk/lets-client.js`, `/sdk/lets-shell.js`); it has no build step and no dependencies. The native view is one plain script the lets host runs in a `node:vm` context (no imports, no timers); CONTRACT.md §5 describes its pane and keys.
 
 ## Develop
 
@@ -55,6 +58,8 @@ LETS_UNIQUES_DIRS=../ node engine/bin/lets.mjs serve --open graph --verbose   # 
 ```
 
 Simplest: symlink or copy this folder to `~/.lets/uniques/graph` (that is where the default install lives) and run the engine's `serve`. Validate with `node scripts/validate.mjs` here, or `node engine/bin/lets.mjs validate <this folder>` from the engine.
+
+Native view: `node scripts/native-smoke.mjs` runs it headlessly against the engine checkout next to this repo (or `LETS_ENGINE=<path>`; `--print` shows the pane as text). On a running host, `node engine/bin/lets.mjs native graph` opens one and prints its pane; `--w <id> --act '{"key":"u.add","kind":"submit","value":"Start"}'` acts on it.
 
 ## License
 

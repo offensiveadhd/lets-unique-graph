@@ -8,8 +8,11 @@
     "name",
     "version",
     "title",
-    "entry",
     "domains"
+  ],
+  "anyOf": [
+    { "required": ["entry"] },
+    { "required": ["native"] }
   ],
   "properties": {
     "lip": {
@@ -35,7 +38,35 @@
     },
     "entry": {
       "type": "string",
+      "description": "The web window: the page served in a browser. Optional since 0.7.0 when `native` is present.",
       "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.html?$"
+    },
+    "native": {
+      "type": "object",
+      "description": "The native window (lets 0.7.0, docs/NATIVE.md): one script the host runs in a vm context and draws as a pane inside Claude Code through the lets-native mod.",
+      "required": ["entry"],
+      "properties": {
+        "entry": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*\\.\\.)[A-Za-z0-9_./-]+\\.m?js$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 400
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 200
+        }
+      },
+      "additionalProperties": false
     },
     "guide": {
       "type": "string",
@@ -100,6 +131,14 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "exec": {
+          "type": "array",
+          "description": "Languages the unique may ask the host runner to execute on the human's behalf (python, javascript, typescript); see docs/RUNNER.md.",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9+#._-]{0,23}$"
           }
         }
       },
