@@ -1072,8 +1072,18 @@ function dotoSpot(state, idx, shown, view, R) {
   if (!real.length) return { x: view.x + view.w / 2, y: view.y + view.h / 2, where: 'centre' };
   const a = state.sel.length === 1 ? idx.get(state.sel[0]) : real[real.length - 1];
   if (a && shown.includes(a)) {
-    const gap = R * 1.8, cy = a.y + a.h / 2;
-    for (const [x, y] of [[a.x + a.w + gap, cy], [a.x - gap, cy], [a.x + a.w / 2, a.y - gap], [a.x + a.w / 2, a.y + a.h + gap]]) if (inside(x, y)) return { x, y, where: 'beside' };
+    // the sides an edge leaves or enters on are taken (its label sits there); a free side first, then any side with room
+    const taken = new Set();
+    const ax = a.x + a.w / 2, ay = a.y + a.h / 2;
+    for (const e of state.graph.edges) {
+      const o = e.from === a.id ? idx.get(e.to) : e.to === a.id ? idx.get(e.from) : null;
+      if (!o || o === a) continue;
+      const dx = o.x + o.w / 2 - ax, dy = o.y + o.h / 2 - ay;
+      taken.add(Math.abs(dx) / (a.w + o.w + 1) >= Math.abs(dy) / (a.h + o.h + 1) ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'below' : 'above'));
+    }
+    const gap = R * 1.8;
+    const sides = [['right', a.x + a.w + gap, ay], ['left', a.x - gap, ay], ['above', ax, a.y - gap], ['below', ax, a.y + a.h + gap]];
+    for (const pass of [0, 1]) for (const [side, x, y] of sides) if ((pass || !taken.has(side)) && inside(x, y)) return { x, y, where: 'beside' };
   }
   return { x: view.x + view.w - 2.4 * R, y: view.y + view.h - 2.4 * R, where: 'corner' };
 }
