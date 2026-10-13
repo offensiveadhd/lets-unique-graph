@@ -1067,7 +1067,8 @@ const dotoDefs = (P) => `<radialGradient id='${P}da'><stop offset='0' stop-color
  * its lower-right corner when that node is out of the picture.
  */
 function dotoSpot(state, idx, shown, view, R) {
-  const inside = (cx, cy) => cx - 2 * R >= view.x && cx + 2 * R <= view.x + view.w && cy - 2 * R >= view.y && cy + 2 * R <= view.y + view.h;
+  // `m` is how much of him must be in the picture: the aura (2R) when there is room, the body (R) when there is not
+  const inside = (cx, cy, m) => cx - m >= view.x && cx + m <= view.x + view.w && cy - m >= view.y && cy + m <= view.y + view.h;
   const real = state.graph.nodes.filter((n) => !(n.meta && n.meta.attachedTo));
   if (!real.length) return { x: view.x + view.w / 2, y: view.y + view.h / 2, where: 'centre' };
   const a = state.sel.length === 1 ? idx.get(state.sel[0]) : real[real.length - 1];
@@ -1082,8 +1083,8 @@ function dotoSpot(state, idx, shown, view, R) {
       taken.add(Math.abs(dx) / (a.w + o.w + 1) >= Math.abs(dy) / (a.h + o.h + 1) ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'below' : 'above'));
     }
     const gap = R * 1.8;
-    const sides = [['right', a.x + a.w + gap, ay], ['left', a.x - gap, ay], ['above', ax, a.y - gap], ['below', ax, a.y + a.h + gap]];
-    for (const pass of [0, 1]) for (const [side, x, y] of sides) if ((pass || !taken.has(side)) && inside(x, y)) return { x, y, where: 'beside' };
+    const sides = [['right', a.x + a.w + gap, ay], ['left', a.x - gap, ay], ['above', ax, a.y - gap], ['below', ax, a.y + a.h + gap]].filter(([side]) => !taken.has(side));
+    for (const m of [2 * R, R]) for (const [, x, y] of sides) if (inside(x, y, m)) return { x, y, where: 'beside' };
   }
   return { x: view.x + view.w - 2.4 * R, y: view.y + view.h - 2.4 * R, where: 'corner' };
 }
