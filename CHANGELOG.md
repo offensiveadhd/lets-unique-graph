@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.1 — 2026-10-14
+
+- **The pane looks like the board from the first second.** The picture is
+  always there: an empty board is drawn as the dark dotted canvas around the
+  spot where the first node will land, with Doto on it and the hint ("Empty
+  board", how to start, the intent) inside the picture. Doto sits on the
+  board in native mode now, a small version of the web sprite, beside the
+  node last touched (the selected one, else the newest), in the view's
+  corner when that node is out of frame.
+- **The picture is live.** It is drawn as an interactive SVG (lets-native
+  draws it in a script-less frame): hovering a node shows its name, kind and
+  the start of its details; Doto blinks; `graph.highlight` glows pulse. A
+  board too big for the tree budget still falls back to the light, static
+  picture.
+- The empty-board hint under the picture is one dim line now (the box is
+  gone); the intent stays on its own line.
+- `scripts/native-smoke.mjs` checks the empty picture, the tooltips and the
+  pulse. GUIDE: the *Native mode* section says what moved.
+
 ## 0.4.0 — 2026-10-13
 
 - **The board opens inside Claude Code.** `/lets graph native` shows it as a
