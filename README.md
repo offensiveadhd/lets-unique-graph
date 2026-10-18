@@ -1,6 +1,6 @@
 <p align="center"><img src="icon.svg" width="72" alt=""></p>
 <h1 align="center">graph</h1>
-<p align="center"><b>Talk to Claude in diagrams.</b><br>The first <a href="https://github.com/TikoTikTok/lets">lets</a> unique: a dark-violet node/edge board where you draw the thing you mean while you chat, and the companion (Doto) reads, points, suggests and edits the same board.</p>
+<p align="center"><b>Talk to Claude in diagrams.</b><br>The first <a href="https://github.com/offensiveadhd/lets">lets</a> unique: a dark-violet node/edge board where you draw the thing you mean while you chat, and the companion (Doto) reads, points, suggests and edits the same board.</p>
 
 ---
 
@@ -63,4 +63,4 @@ Native view: `node scripts/native-smoke.mjs` runs it headlessly against the engi
 
 ## License
 
-MIT © TikoTikTok
+MIT © offensiveadhd

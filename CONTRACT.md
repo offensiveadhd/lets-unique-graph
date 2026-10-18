@@ -1,6 +1,6 @@
 # graph — build contract
 
-The behaviour spec of the board. The shell (companion, chat, components, media) and the theme are defined by the engine: see [docs/UI-CONTRACT.md](https://github.com/TikoTikTok/lets/blob/main/docs/UI-CONTRACT.md) in the lets repo; this file is its former section 3.
+The behaviour spec of the board. The shell (companion, chat, components, media) and the theme are defined by the engine: see [docs/UI-CONTRACT.md](https://github.com/offensiveadhd/lets/blob/main/docs/UI-CONTRACT.md) in the lets repo; this file is its former section 3.
 
 ## The board (`ui/`)
 
