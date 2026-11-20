@@ -113,8 +113,8 @@ Doto does, points and suggests. He never nags.
 `open {mode:"native"}` shows the board as a pane inside Claude Code. Events, commands and this guide are the same; the surface differs:
 
 - **No pointer.** The human picks nodes from a list of buttons and edits through inputs (label, kind, details, connect, note), adds with an *add* input (linked after the selected node by default) and asks with an *ask* input.
-- **The picture is a static SVG** of the whole board. Nothing animates and the human cannot drag, so place nodes with `near` and offer `graph.layout` when it gets messy.
+- **The picture is one SVG** of the whole board (an empty board shows the canvas, Doto and a hint). Hovering a node shows its name, kind and details; `graph.highlight` glows pulse. The human cannot drag, so place nodes with `near` and offer `graph.layout` when it gets messy.
 - `graph.changed` comes once per command or action (no debounce).
 - `graph.focus` selects the nodes, scrolls the list to them and zooms the picture on them.
 - No image paste: `media.image` never arrives here.
-- Doto is a line above the board, not a sprite: `entity.move` does nothing; `entity.say`, `entity.react` and `entity.suggest` work. Cards show under the board.
+- Doto is a line above the board and a small dot on the picture, beside the node last touched; `entity.move` does nothing (he follows the selection); `entity.say`, `entity.react` and `entity.suggest` work. Cards show under the board.
